@@ -40,7 +40,13 @@ typedef struct s_options {
 	bool			filter_defined; // -u options, undefined only
 }	t_options;
 
+/* Main functions */
+
+int	ft_nm(int nbr_arg, char** args, t_options* options);
+
 /* ERRORS DEFINITION */
+
+int	error_open_file(const char* path, int errnum);
 
 /* ARGS */
 

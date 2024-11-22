@@ -4,6 +4,7 @@
 // NBR_OPTIONS must be defined as the size of options_map
 extern int	NBR_OPTIONS;
 extern t_opt_flag *options_map;
+extern const char* executable_name;
 
 static int	print_valid_arguments(const char*** valids) {
 	if (!valids || !*valids)
@@ -20,17 +21,17 @@ static int	print_valid_arguments(const char*** valids) {
 }
 
 static int	error_invalid_flag(const char flag) {
-	ft_dprintf(2, "ft_ls: invalid option -- '%c'\n", flag);
+	ft_dprintf(2, "%s: invalid option -- '%c'\n", executable_name, flag);
 	return (ERROR_INPUT);
 }
 
 static int	error_invalid_option(const char* arg) {
-	ft_dprintf(2, "ft_ls: unrecognised option '--%s'\n", arg);
+	ft_dprintf(2, "%s: unrecognised option '--%s'\n", executable_name, arg);
 	return (ERROR_INPUT);
 }
 
 static int	error_ambiguous_option(const char* arg, t_list* matches) {
-	ft_dprintf(2, "ft_ls: option '--%s' is ambiguous; possibilities: ", arg);
+	ft_dprintf(2, "%s: option '--%s' is ambiguous; possibilities: ", executable_name, arg);
 	while (matches) {
 		ft_dprintf(2, " '--%s'", ((t_opt_flag*)matches->content)->long_id);
 		matches = matches->next;
@@ -40,29 +41,29 @@ static int	error_ambiguous_option(const char* arg, t_list* matches) {
 }
 
 static int	error_flag_missing_argument(const char option) {
-	ft_dprintf(2, "ft_ls: option requires an argument -- '%c'\n", option);
+	ft_dprintf(2, "%s: option requires an argument -- '%c'\n", executable_name, option);
 	return (ERROR_INPUT);
 }
 
 static int	error_option_missing_argument(const char* option) {
-	ft_dprintf(2, "ft_ls: option '--%s' requires an argument\n", option);
+	ft_dprintf(2, "%s: option '--%s' requires an argument\n", executable_name, option);
 	return (ERROR_INPUT);
 }
 
 static int	error_option_extra_argument(const char* option, int end) {
-	ft_dprintf(2, "ft_ls: option '--%.*s' doesn't allow an argument\n", end, option);
+	ft_dprintf(2, "%s: option '--%.*s' doesn't allow an argument\n", executable_name, end, option);
 	return (ERROR_INPUT);
 }
 
 
 int	ft_options_err_invalid_argument(const char* option, const char* arg, const char*** valids) {
-	ft_dprintf(2, "ft_ls: invalid argument ‘%s’ for ‘--%s’\n", arg, option);
+	ft_dprintf(2, "%s: invalid argument ‘%s’ for ‘--%s’\n", executable_name, arg, option);
 	print_valid_arguments(valids);
 	return (ERROR_INPUT);
 }
 
 int	ft_options_err_ambiguous_argument(const char* option, const char* arg, const char*** valids) {
-	ft_dprintf(2, "ft_ls: ambiguous argument ‘%s’ for ‘--%s’\n", arg, option);
+	ft_dprintf(2, "%s: ambiguous argument ‘%s’ for ‘--%s’\n", executable_name, arg, option);
 	print_valid_arguments(valids);
 	return (ERROR_INPUT);
 }

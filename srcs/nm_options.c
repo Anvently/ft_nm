@@ -36,6 +36,7 @@ t_opt_flag options_list[__FT_NBR_OPTIONS] = {
 
 t_opt_flag*	options_map = &options_list[0];
 int			NBR_OPTIONS = __FT_NBR_OPTIONS;
+const char*	executable_name = "ft_nm";
 
 static int	option_set_debug_syms(t_options* options, char* arg) {
 	(void) arg;
