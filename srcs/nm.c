@@ -28,6 +28,19 @@ static int map_file(const char* path, const char** mapped_dest, size_t* size) {
 	return (SUCCESS);
 }
 
+/// @brief NOT checked : EI_OSABI, EI_ABIVERSION, e_type, e_machine, 
+/// @param file_info 
+/// @return 
+static int	check_header(t_file_info* file_info) {
+	// Check data type
+	if (file_info->header.h32.e_ident[EI_DATA] < ELFDATA2LSB || file_info->header.h32.e_ident[EI_DATA] > ELFDATA2MSB)
+		return (ERROR_SYS);
+	// Check version / always = 1
+	if (file_info->header.h32.e_ident[EI_VERSION] != EV_CURRENT)
+		return (ERROR_SYS);
+	
+}
+
 /// @brief Fill header member according to file class (x32 or x64).
 /// @param file_info 
 /// @return ```1``` for incorrect format
@@ -42,6 +55,7 @@ static int	retrieve_header(t_file_info* file_info) {
 		ft_memcpy(&file_info->header, file_info->mapped_content, sizeof(Elf64_Ehdr));
 	else
 		return (ERROR_SYS);
+	
 	return (SUCCESS);
 }
 
