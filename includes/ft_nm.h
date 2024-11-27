@@ -3,6 +3,7 @@
 
 # include <stdbool.h>
 # include <stdlib.h>
+# include <elf.h>
 
 enum	OPTIONS {
 			OPT_DEBUG_SYMS = 0, // -a
@@ -42,11 +43,25 @@ typedef struct s_options {
 
 /* Main functions */
 
+// # define GET_CLASS(header) (header.h32)
+
+typedef union {
+	Elf64_Ehdr	h64;
+	Elf32_Ehdr	h32;
+}	t_elf_header;
+
+typedef struct {
+	t_elf_header	header;
+	size_t			size;
+	const char*		mapped_content;
+}	t_file_info;
+
 int	ft_nm(int nbr_arg, char** args, t_options* options);
 
 /* ERRORS DEFINITION */
 
 int	error_open_file(const char* path, int errnum);
+int	error_file_format(const char* path);
 
 /* ARGS */
 
