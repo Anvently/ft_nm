@@ -53,8 +53,10 @@ static const char*	get_string_from_array(t_file_info* file_info, const char* arr
 	const char*	max_addr_array = array + array_size;
 	const char*	max_addr_file = file_info->mapped_content + file_info->size;
 
+	ft_printf("Looking for idx %#x. Array size = %#x\n", index, array_size);
 	for (size_t i = 0; i < index; i++) {
 		str = array;
+		ft_printf("|%.100s|\n", str);
 		while (*str && str < max_addr_array && str < max_addr_file) {
 			str++;
 		}
