@@ -50,23 +50,49 @@ typedef union {
 	Elf32_Ehdr	h32;
 }	t_elf_header;
 
+typedef union {
+	Elf64_Shdr	h64;
+	Elf32_Shdr	h32;
+}	t_section_header;
+
 typedef struct {
-	t_elf_header	header;
-	size_t			size;
-	const char*		mapped_content;
+	t_elf_header		elf_header;
+	t_section_header	syms_header;
+	t_section_header	str_tbl_header;
+	size_t				size;
+	const char*			mapped_content;
+	const char*			path;
 }	t_file_info;
 
+// Macro to cast given address
+#define GET_CLASS(file_ptr) (((t_file_info*)file_ptr)->elf_header.h32.e_ident[EI_CLASS])
+#define IS32(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS32)
+#define IS64(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS64)
+
 int	ft_nm(int nbr_arg, char** args, t_options* options);
+int	ft_nm_print_symbols(t_file_info* file_info, t_options* options);
+
+/* UTILS */
+
+uint32_t	nm_get_shdr_type(t_file_info* file_info, size_t index);
+Elf32_Shdr*	nm_get_shdr_32(t_file_info* file_info, size_t index);
+Elf64_Shdr*	nm_get_shdr_64(t_file_info* file_info, size_t index);
+const char*	nm_get_sym_str(t_file_info* file_info, size_t idx);
 
 /* ERRORS DEFINITION */
 
 int	error_open_file(const char* path, int errnum);
-int	error_file_format(const char* path);
+int	error_file_format(const char* path, const char* detail);
+int	error_bad_index(const char* path, size_t index);
+int	warning_bad_table_index(const char* path, size_t index);
+int	warning_non_string_section(const char* path, size_t index);
+int	warning_corrupt_entry_size(const char* path, size_t entry_size, size_t section_size);
 
 /* ARGS */
 
 /* DEBUG */
 
 void	print_option(t_options* options);
+void	print_section_header(t_section_header* header, unsigned char class);
 
 #endif

@@ -9,9 +9,33 @@ int	error_open_file(const char* path, int errnum) {
 	return (ERROR_SYS);
 }
 
-int	error_file_format(const char* path) {
-	ft_dprintf(2, "%s: '%s': %s\n", executable_name, path, "file format not recognized");
+int	error_file_format(const char* path, const char* detail) {
+	ft_dprintf(2, "%s: '%s': %s (%s)\n", executable_name, path,
+		"file format not recognized", detail ? detail : "");
 	return (ERROR_SYS);
 }
 // static void	
 
+int	error_bad_index(const char* path, size_t index) {
+	ft_dprintf(2, "warning: %s: '%s': %s (%#x)\n", executable_name, path,
+		"offset is outside file", (unsigned int)index);
+	return (ERROR_SYS);
+}
+
+int	warning_bad_table_index(const char* path, size_t index) {
+	ft_dprintf(2, "warning: %s: '%s': %s (%#x)\n", executable_name, path,
+		"corrupt string table index", (unsigned int)index);
+	return (ERROR_SYS);
+}
+
+int	warning_non_string_section(const char* path, size_t index) {
+	ft_dprintf(2, "warning: %s: '%s': %s (%#x)\n", executable_name, path,
+		"symtab should link a string section", (unsigned int)index);
+	return (ERROR_SYS);
+}
+
+int	warning_corrupt_entry_size(const char* path, size_t entry_size, size_t section_size) {
+	ft_dprintf(2, "warning: %s: '%s': %s (%#x/%#x)\n", executable_name, path,
+		"corrupted symtab entry size", (unsigned int)entry_size, (unsigned int)section_size);
+	return (ERROR_SYS);
+}
