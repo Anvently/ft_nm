@@ -42,21 +42,22 @@ Elf64_Shdr*	nm_get_shdr_64(t_file_info* file_info, size_t index) {
 	return ((Elf64_Shdr*)(file_info->mapped_content + offset));
 }
 
+/// @warning DEPRECATED ! index value in st_name actually refer to absolute adress offset
+/// in strtab and not index in string array
 /// @brief Retrieve a string by index in a string array separated with ```\0```.
 /// @param file_info 
 /// @param array 
 /// @param array_size 
 /// @param index 
 /// @return ```NULL``` if string not found in array, ```<corrupt>``` if non-terminated array
-static const char*	get_string_from_array(t_file_info* file_info, const char* array, size_t array_size, size_t index) {
+static inline const char*	get_string_from_array(t_file_info* file_info, const char* array, size_t array_size, size_t index) {
 	const char*	str;
 	const char*	max_addr_array = array + array_size;
 	const char*	max_addr_file = file_info->mapped_content + file_info->size;
 
-	ft_printf("Looking for idx %#x. Array size = %#x\n", index, array_size);
+	// ft_printf("Looking for idx %#x. Array size = %#x\n", index, array_size);
 	for (size_t i = 0; i < index; i++) {
 		str = array;
-		ft_printf("|%.100s|\n", str);
 		while (*str && str < max_addr_array && str < max_addr_file) {
 			str++;
 		}
@@ -81,13 +82,15 @@ const char*	nm_get_sym_str(t_file_info* file_info, size_t idx) {
 	if (IS32(file_info)) {
 		if (file_info->str_tbl_header.h32.sh_type != SHT_STRTAB)
 			return corrupt_str;
+		else if (idx >= file_info->str_tbl_header.h32.sh_size)
+			return corrupt_str;
 		else
-			return (get_string_from_array(file_info, file_info->mapped_content + file_info->str_tbl_header.h32.sh_offset,
-				file_info->str_tbl_header.h32.sh_size, idx));
+			return (file_info->mapped_content + file_info->str_tbl_header.h32.sh_offset + idx);
 	}
 	if (file_info->str_tbl_header.h64.sh_type != SHT_STRTAB)
 		return corrupt_str;
+	else if (idx >= file_info->str_tbl_header.h64.sh_size)
+			return corrupt_str;
 	else
-		return (get_string_from_array(file_info, file_info->mapped_content + file_info->str_tbl_header.h64.sh_offset,
-			file_info->str_tbl_header.h64.sh_size, idx));
+		return (file_info->mapped_content + file_info->str_tbl_header.h64.sh_offset + idx);
 }

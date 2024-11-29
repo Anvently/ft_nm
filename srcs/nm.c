@@ -87,7 +87,8 @@ static int	handle_file(char* path, t_options* options) {
 	ft_printf("\n%s:\n", path);
 	if (ft_nm_print_symbols(&file_info, options))
 		return (ERROR_SYS);
-	print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
+	// print_section_header(&file_info.str_tbl_header, GET_CLASS(&file_info));
+	// print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
 	ft_printf("ok!\n");
 	
 	return (0);

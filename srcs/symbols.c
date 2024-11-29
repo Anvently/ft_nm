@@ -116,6 +116,9 @@ static int	_print_symbols_64(t_file_info* file_info, t_options* options) {
 	const char*		sym_str;
 	(void) 			options;
 
+	// ft_hexdump(file_info->mapped_content, file_info->str_tbl_header.h64.sh_size, 1, file_info->str_tbl_header.h64.sh_offset);
+	// ft_hexdump(file_info->mapped_content + file_info->str_tbl_header.h64.sh_offset, file_info->str_tbl_header.h64.sh_size, 1, 0);
+	// ft_hexdump_color_zone(file_info->mapped_content + file_info->syms_header.h64.sh_offset, file_info->syms_header.h64.sh_size / 2, 2, 0, 12);
 	for (; sym_offset < max_offset; sym_offset += sizeof(Elf64_Sym)) {
 		if (sym_offset >= file_info->size)
 			return (error_bad_index(file_info->path, sym_offset));

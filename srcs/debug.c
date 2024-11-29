@@ -44,4 +44,3 @@ void	print_section_header(t_section_header* header, unsigned char class) {
 	else
 		ft_dprintf(2, "ERROR INVALID CLASS IN DEBUG\n");
 }
-
