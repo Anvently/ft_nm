@@ -69,14 +69,14 @@ static int	retrieve_header(t_file_info* file_info) {
 
 
 static int	handle_file(char* path, t_options* options) {
-	// const char*	mapped;
-	// size_t		size;
+	int			ret = 0;
 	t_file_info	file_info = {0};
 
 	(void) options;
 	file_info.path = path;
 	if (map_file(file_info.path, &file_info.mapped_content, &file_info.size))
 		return (ERROR_SYS);
+	file_info.max_addr = (void*)file_info.mapped_content + file_info.size;
 	if (retrieve_header(&file_info))
 		return (ERROR_SYS);
 	if (check_header(&file_info))
@@ -85,13 +85,14 @@ static int	handle_file(char* path, t_options* options) {
 		return (ERROR_SYS);
 	//Check error in table header
 	ft_printf("\n%s:\n", path);
-	if (ft_nm_print_symbols(&file_info, options))
-		return (ERROR_SYS);
+	if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
+		ret = ft_nm_print_symbols(&file_info, options);
+	ft_vector_free(&file_info.symbols);
 	// print_section_header(&file_info.str_tbl_header, GET_CLASS(&file_info));
 	// print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
 	ft_printf("ok!\n");
 	
-	return (0);
+	return (ret);
 }
 
 int	ft_nm(int nbr_arg, char** args, t_options* options) {

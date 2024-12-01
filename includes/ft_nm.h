@@ -3,6 +3,7 @@
 
 # include <stdbool.h>
 # include <stdlib.h>
+# include <libft.h>
 # include <elf.h>
 
 enum	OPTIONS {
@@ -29,7 +30,8 @@ enum	E_ERRORS {
 # endif
 
 enum SORT_BY {
-	SORT_BY_NUMERIC,
+	SORT_BY_ASCII,
+	SORT_BY_ADDR,
 	SORT_BY_DISABLE
 };
 
@@ -62,7 +64,18 @@ typedef struct {
 	size_t				size;
 	const char*			mapped_content;
 	const char*			path;
+	t_vector*			symbols;
+	size_t				nbr_symbols;
+	void*				max_addr;
 }	t_file_info;
+
+typedef struct {
+	union {
+		Elf32_Sym*	s32;
+		Elf64_Sym*	s64;
+	}				addr;
+	const char*		str;
+}	t_symbol_entry;
 
 // Macro to cast given address
 #define GET_CLASS(file_ptr) (((t_file_info*)file_ptr)->elf_header.h32.e_ident[EI_CLASS])
@@ -70,7 +83,8 @@ typedef struct {
 #define IS64(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS64)
 
 int	ft_nm(int nbr_arg, char** args, t_options* options);
-int	ft_nm_print_symbols(t_file_info* file_info, t_options* options);
+int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options);
+int	ft_nm_print_symbols(t_file_info* file_info);
 
 /* UTILS */
 
@@ -81,12 +95,13 @@ const char*	nm_get_sym_str(t_file_info* file_info, size_t idx);
 
 /* ERRORS DEFINITION */
 
-int	error_open_file(const char* path, int errnum);
-int	error_file_format(const char* path, const char* detail);
-int	error_bad_index(const char* path, size_t index);
-int	warning_bad_table_index(const char* path, size_t index);
-int	warning_non_string_section(const char* path, size_t index);
-int	warning_corrupt_entry_size(const char* path, size_t entry_size, size_t section_size);
+int		error_open_file(const char* path, int errnum);
+int		error_file_format(const char* path, const char* detail);
+int		error_bad_index(const char* path, size_t index);
+int		warning_bad_table_index(const char* path, size_t index);
+int		warning_non_string_section(const char* path, size_t index);
+int		warning_corrupt_entry_size(const char* path, size_t entry_size, size_t section_size);
+void	error_alloc(const char* context);
 
 /* ARGS */
 

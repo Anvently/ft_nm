@@ -39,3 +39,12 @@ int	warning_corrupt_entry_size(const char* path, size_t entry_size, size_t secti
 		"corrupted symtab entry size", (unsigned int)entry_size, (unsigned int)section_size);
 	return (ERROR_SYS);
 }
+
+void	error_alloc(const char* context) {
+	static const char*	msg = "ft_nm: fatal error: failed to alloc in context: ";
+	write(2, msg, ft_strlen(msg));
+	if (context)
+		write(2, context, ft_strlen(context));
+	write(2, "\n", 1);
+	exit(ERROR_FATAL);
+}

@@ -15,7 +15,7 @@ LIBFT		=	libft/libft.a
 CC			=	gcc
 CFLAGS		=	-fsanitize=address -Wall -Wextra -Werror -g3 -MMD -I$(INCLUDES)
 
-.PHONY		=	all clean fclean test re bonus
+.PHONY		=	all clean fclean re bonus
 
 -include	$(wildcard *.d)
 
