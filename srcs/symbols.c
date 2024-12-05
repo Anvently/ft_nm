@@ -13,7 +13,7 @@ static int	_comp_symbols_ascii(void* a, void* b) {
 	t_symbol_entry*	sA = (t_symbol_entry*)a;
 	t_symbol_entry*	sB = (t_symbol_entry*)b;
 
-	return (ft_stricmp_ignore(sA->str, sB->str, " _	"));
+	return (ft_stricmp_ignore(sA->str, sB->str, " _	."));
 }
 
 static int	_comp_symbols_addr32(void* a, void* b) {
@@ -263,6 +263,49 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 	return (0);
 }
 
+
+/// @brief 
+/// @param symbol 
+/// @return
+/// @todo Need to understantd :
+/// - ```-```
+/// - ```c/C```
+/// - ```g```
+/// - ```i/I```
+/// - ```p```
+/// - difference between ```n``` and ```N```
+/// - ```s/S```
+static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
+	unsigned char	ret = '?';
+
+	if (symbol->addr.s64->st_shndx == SHN_ABS)
+		ret = 'a';
+	else if (symbol->shdr.s64->sh_type == SHT_NOBITS) //bss section, unitialized data
+		ret = 'b';
+	else if (ELF64_ST_TYPE(symbol->addr.s64->st_info) == STT_COMMON)
+		ret = 'c';
+	else if ((symbol->shdr.s64->sh_flags & SHF_ALLOC && symbol->shdr.s64->sh_flags & SHF_WRITE))
+		ret = 'd';
+	else if (symbol->addr.s64->st_name == SHN_UNDEF && ft_strncmp(".debug", symbol->str, 6) == 0)
+		ret = 'N';
+	else if (symbol->shdr.s64->sh_flags & SHF_ALLOC && !(symbol->shdr.s64->sh_flags & (SHF_WRITE | SHF_EXECINSTR)))
+		ret = 'r';
+	else if (symbol->shdr.s64->sh_type == SHT_PROGBITS && symbol->shdr.s64->sh_flags & SHF_EXECINSTR)
+		ret = 't';
+	else if (symbol->addr.s64->st_shndx == SHN_UNDEF)
+		ret = 'U';
+	if (ft_islower(ret) && ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_GLOBAL)
+		ret -= ('a' - 'A');
+	else if (ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_WEAK) {
+		ret = 'w';
+		if (ELF64_ST_TYPE(symbol->addr.s64->st_info) == STT_OBJECT)
+			ret = 'v';
+		if (symbol->addr.s64->st_shndx)
+			ret -= ('a' - 'A');
+	}
+	return (ret);
+}
+
 /// @brief Print symbols from file_info symbols vector
 /// @param file_info 
 /// @return 
@@ -271,8 +314,12 @@ int	ft_nm_print_symbols(t_file_info* file_info) {
 
 	for (size_t i = 0; i < file_info->nbr_symbols; i++) {
 		symbol = (t_symbol_entry*)file_info->symbols + i;
-		if (IS64(file_info))
-			ft_printf("%016x X %s\n", symbol->addr.s64->st_value, symbol->str);
+		if (IS64(file_info)) {
+			if (symbol->addr.s64->st_shndx == SHN_UNDEF)
+				ft_printf("%16s %c %s\n", "", _get_sym_type_64(symbol), symbol->str);
+			else
+				ft_printf("%016x %c %s\n", symbol->addr.s64->st_value, _get_sym_type_64(symbol), symbol->str);
+		}
 		else
 			ft_printf("%016x X %s\n", symbol->addr.s32->st_value, symbol->str);
 	}
