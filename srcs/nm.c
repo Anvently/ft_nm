@@ -89,6 +89,8 @@ static int	handle_file(char* path, t_options* options, bool print_name) {
 	if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
 		ret = ft_nm_print_symbols(&file_info);
 	ft_vector_free(&file_info.symbols);
+	if (munmap((char*)file_info.mapped_content, file_info.size))
+		return (ERROR_FATAL);
 	// print_section_header(&file_info.str_tbl_header, GET_CLASS(&file_info));
 	// print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
 	
@@ -102,7 +104,10 @@ int	ft_nm(unsigned int nbr_arg, char** args, t_options* options) {
 	if (nbr_arg == 0)
 		return (handle_file("a.out", options, false));
 	while(i < nbr_arg) {
-		if (*(args + i) == NULL) continue;
+		if (*(args + i) == NULL) {
+			args++;
+			continue;
+		}
 		switch (handle_file(*(args + i), options, nbr_arg > 1))
 		{
 			case SUCCESS:
