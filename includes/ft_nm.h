@@ -82,7 +82,7 @@ typedef struct {
 #define IS32(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS32)
 #define IS64(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS64)
 
-int	ft_nm(int nbr_arg, char** args, t_options* options);
+int	ft_nm(unsigned int nbr_arg, char** args, t_options* options);
 int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options);
 int	ft_nm_print_symbols(t_file_info* file_info);
 

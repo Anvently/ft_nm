@@ -125,6 +125,61 @@ int	retrieve_syms_table_header(t_file_info* file_info) {
 	return (0);
 }
 
+/// @brief 
+/// @param symbol 
+/// @param options 
+/// @return ```false``` if symbol must be filtered
+static bool	_filter_symbol_32(Elf32_Sym* symbol, t_options* options) {
+	Elf32_Sym	null_sym = {0};
+
+	// Filter empty symbol
+	if (ft_memcmp(symbol, &null_sym, sizeof(null_sym)) == 0)
+		return (false);
+	return (true);
+
+	//Filter section symbol (debug)
+	if (options->display_debug_syms == false && (
+		(ELF32_ST_TYPE(symbol->st_info) == STT_SECTION) || (ELF32_ST_TYPE(symbol->st_info) == STT_FILE)))
+		return (false);
+
+	//Filter local symbol
+	if (options->filter_local && ELF32_ST_BIND(symbol->st_info) == STB_LOCAL)
+		return (false);
+
+	//Filter defined symbol (symbol that find their value in a section contained in the file)
+	if (options->filter_defined == true && symbol->st_shndx != SHN_UNDEF)
+		return (false);
+
+	return (true);
+}
+
+/// @brief 
+/// @param symbol 
+/// @param options 
+/// @return ```false``` if symbol must be filtered
+static bool	_filter_symbol_64(Elf64_Sym* symbol, t_options* options) {
+	Elf64_Sym	null_sym = {0};
+
+	// Filter empty symbol
+	if (ft_memcmp(symbol, &null_sym, sizeof(null_sym)) == 0)
+		return (false);
+
+	//Filter section symbol (debug)
+	if (options->display_debug_syms == false && (
+		(ELF64_ST_TYPE(symbol->st_info) == STT_SECTION) || (ELF64_ST_TYPE(symbol->st_info) == STT_FILE)))
+		return (false);
+
+	//Filter local symbol
+	if (options->filter_local && ELF64_ST_BIND(symbol->st_info) == STB_LOCAL)
+		return (false);
+
+	//Filter defined symbol (symbol that find their value in a section contained in the file)
+	if (options->filter_defined == true && symbol->st_shndx != SHN_UNDEF)
+		return (false);
+
+	return (true);
+}
+
 static int	_retrieve_symbols_32(t_file_info* file_info, t_options* options) {
 	Elf32_Sym*		symbol = (void*)file_info->mapped_content + file_info->syms_header.h32.sh_offset;
 	t_symbol_entry	s_entry;
@@ -137,7 +192,8 @@ static int	_retrieve_symbols_32(t_file_info* file_info, t_options* options) {
 	for (size_t i = 0; i < file_info->nbr_symbols; symbol += 1, i++) {
 		if ((void*)symbol > file_info->max_addr)
 			return (error_bad_index(file_info->path, (void*)symbol - (void*)file_info->mapped_content));
-		// Check if the symbol is to be kept from options
+		if (_filter_symbol_32(symbol, options) == false)
+			continue;
 		s_entry.addr.s32 = symbol;
 		s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
 		ft_vector_push(&file_info->symbols, &s_entry);
@@ -157,7 +213,8 @@ static int	_retrieve_symbols_64(t_file_info* file_info, t_options* options) {
 	for (size_t i = 0; i < file_info->nbr_symbols; symbol += 1, i++) {
 		if ((void*)symbol > file_info->max_addr)
 			return (error_bad_index(file_info->path, (void*)symbol - (void*)file_info->mapped_content));
-		// Check if the symbol is to be kept from options
+		if (_filter_symbol_64(symbol, options) == false)
+			continue;
 		s_entry.addr.s64 = symbol;
 		s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
 		ft_vector_push(&file_info->symbols, &s_entry);
@@ -184,6 +241,12 @@ static int	_retrieve_symbols_64(t_file_info* file_info, t_options* options) {
 // 	return (0);
 // }
 
+
+/// @brief Retrieve symbols from symtab, filtering them.
+/// Sort them and ignore some according to options.
+/// @param file_info 
+/// @param options 
+/// @return ```0``` for success.
 int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 	if (IS32(file_info) && _retrieve_symbols_32(file_info, options))
 			return (ERROR_SYS);
@@ -228,12 +291,22 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 // 	return (0);
 // }
 
+// static unsigned char	get_symbol_type(t_symbol_entry* symbol) {
+// 	const unsigned char	type[] = "?";
+// }
+
+/// @brief Print symbols from file_info symbols vector
+/// @param file_info 
+/// @return 
 int	ft_nm_print_symbols(t_file_info* file_info) {
 	t_symbol_entry*	symbol;
 
 	for (size_t i = 0; i < file_info->nbr_symbols; i++) {
 		symbol = (t_symbol_entry*)file_info->symbols + i;
-		ft_printf("%016x X %s\n", symbol->addr.s64->st_value, symbol->str);
+		if (IS64(file_info))
+			ft_printf("%016x X %s\n", symbol->addr.s64->st_value, symbol->str);
+		else
+			ft_printf("%016x X %s\n", symbol->addr.s32->st_value, symbol->str);
 	}
 	return (0);
 }

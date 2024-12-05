@@ -33,7 +33,7 @@ typedef struct s_option_flag {
 	int				(*handler)(t_options*, char*);
 } t_opt_flag;
 
-int	ft_options_retrieve(int nbr, char** args, t_options* options);
+int	ft_options_retrieve(int nbr, char** args, t_options* options, unsigned int* dest_nbr_args);
 int	ft_options_err_invalid_argument(const char* option, const char* arg, const char*** valids);
 int	ft_options_err_ambiguous_argument(const char* option, const char* arg, const char*** valids);
 

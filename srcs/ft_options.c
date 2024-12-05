@@ -174,10 +174,14 @@ static int	ft_parse_option_long(char** next_arg, char* arg, t_options* options) 
 /// @param nbr 
 /// @param args 
 /// @param options 
-/// @return ```2``` if input errors
-int	ft_options_retrieve(int nbr, char** args, t_options* options) {
-	int		ret = 0;
+/// @param arg_number if given, will receive nuber of non-options argument
+/// @return ```2``` if input error
+/// ```-1``` if allocatio error
+int	ft_options_retrieve(int nbr, char** args, t_options* options, unsigned int* arg_number) {
+	int				ret = 0;
 
+	if (arg_number)
+		*arg_number = 0;
 	for (int i = 0; i < nbr; i++) {
 		if (args[i] == NULL)
 			continue;
@@ -194,6 +198,8 @@ int	ft_options_retrieve(int nbr, char** args, t_options* options) {
 					return (ret);
 			}
 			args[i] = NULL;
+		} else if (arg_number) {
+			(*arg_number)++;
 		}
 	}
 	return (0);

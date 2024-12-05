@@ -68,7 +68,7 @@ static int	retrieve_header(t_file_info* file_info) {
 }
 
 
-static int	handle_file(char* path, t_options* options) {
+static int	handle_file(char* path, t_options* options, bool print_name) {
 	int			ret = 0;
 	t_file_info	file_info = {0};
 
@@ -84,25 +84,26 @@ static int	handle_file(char* path, t_options* options) {
 	if (retrieve_syms_table_header(&file_info))
 		return (ERROR_SYS);
 	//Check error in table header
-	ft_printf("\n%s:\n", path);
+	if (print_name)
+		ft_printf("\n%s:\n", path);
 	if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
-		ret = ft_nm_print_symbols(&file_info, options);
+		ret = ft_nm_print_symbols(&file_info);
 	ft_vector_free(&file_info.symbols);
 	// print_section_header(&file_info.str_tbl_header, GET_CLASS(&file_info));
 	// print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
-	ft_printf("ok!\n");
 	
 	return (ret);
 }
 
-int	ft_nm(int nbr_arg, char** args, t_options* options) {
-	int		ret = 0;
-	bool	no_arg = true;
+int	ft_nm(unsigned int nbr_arg, char** args, t_options* options) {
+	int				ret = 0;
+	unsigned int	i = 0;
 
-	for (int i = 0; i < nbr_arg; i++) {
-		if (*args == NULL) continue;
-		no_arg = false;
-		switch (handle_file(*(args + i), options))
+	if (nbr_arg == 0)
+		return (handle_file("a.out", options, false));
+	while(i < nbr_arg) {
+		if (*(args + i) == NULL) continue;
+		switch (handle_file(*(args + i), options, nbr_arg > 1))
 		{
 			case SUCCESS:
 				break;
@@ -114,8 +115,7 @@ int	ft_nm(int nbr_arg, char** args, t_options* options) {
 			default:
 				return (ERROR_FATAL);
 		}
+		i++;
 	}
-	if (no_arg)
-		return (handle_file("a.out", options));
 	return (ret);
 }
