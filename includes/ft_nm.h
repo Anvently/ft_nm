@@ -57,16 +57,22 @@ typedef union {
 	Elf32_Shdr	h32;
 }	t_section_header;
 
+typedef union {
+	Elf64_Shdr*	h64;
+	Elf32_Shdr*	h32;
+}	t_section_header_ptr;
+
 typedef struct {
-	t_elf_header		elf_header;
-	t_section_header	syms_header;
-	t_section_header	str_tbl_header;
-	size_t				size;
-	const char*			mapped_content;
-	const char*			path;
-	t_vector*			symbols;
-	size_t				nbr_symbols;
-	void*				max_addr;
+	t_elf_header			elf_header;
+	t_section_header		syms_header;
+	t_section_header		str_tbl_header;
+	t_section_header_ptr	shstr_tbl_header;
+	size_t					size;
+	const char*				mapped_content;
+	const char*				path;
+	t_vector*				symbols;
+	size_t					nbr_symbols;
+	void*					max_addr;
 }	t_file_info;
 
 typedef struct {
@@ -74,6 +80,10 @@ typedef struct {
 		Elf32_Sym*	s32;
 		Elf64_Sym*	s64;
 	}				addr;
+	union {
+		Elf32_Shdr*	s32;
+		Elf64_Shdr*	s64;
+	}				shdr;
 	const char*		str;
 }	t_symbol_entry;
 
@@ -81,6 +91,7 @@ typedef struct {
 #define GET_CLASS(file_ptr) (((t_file_info*)file_ptr)->elf_header.h32.e_ident[EI_CLASS])
 #define IS32(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS32)
 #define IS64(file_ptr) (GET_CLASS(file_ptr) == ELFCLASS64)
+#define IS_VALID_STRTAB(shdr_ptr)((shdr_ptr) != NULL && (shdr_ptr)->sh_type == SHT_STRTAB)
 
 int	ft_nm(unsigned int nbr_arg, char** args, t_options* options);
 int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options);
@@ -92,6 +103,7 @@ uint32_t	nm_get_shdr_type(t_file_info* file_info, size_t index);
 Elf32_Shdr*	nm_get_shdr_32(t_file_info* file_info, size_t index);
 Elf64_Shdr*	nm_get_shdr_64(t_file_info* file_info, size_t index);
 const char*	nm_get_sym_str(t_file_info* file_info, size_t idx);
+const char*	nm_get_section_str(t_file_info* file_info, size_t idx);
 
 /* ERRORS DEFINITION */
 

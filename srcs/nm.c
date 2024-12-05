@@ -8,6 +8,7 @@
 
 extern int	retrieve_syms_table_header(t_file_info* file_info);
 extern int	retrieve_str_table_header(t_file_info* file_info);
+extern int	retrieve_shstr_table(t_file_info* file_info);
 
 static int map_file(const char* path, const char** mapped_dest, size_t* size) {
 	int			fd;
@@ -43,9 +44,9 @@ static int	check_header(t_file_info* file_info) {
 		return (error_file_format(file_info->path, "invalid version"));
 	// Checking shstrndx
 	if (GET_CLASS(file_info) == ELFCLASS32 && file_info->elf_header.h32.e_shstrndx > file_info->elf_header.h32.e_shnum)
-		return (warning_bad_table_index(file_info->path, file_info->elf_header.h32.e_shstrndx));
+		warning_bad_table_index(file_info->path, file_info->elf_header.h32.e_shstrndx);
 	else if (GET_CLASS(file_info) == ELFCLASS64 && file_info->elf_header.h64.e_shstrndx > file_info->elf_header.h64.e_shnum)
-		return (warning_bad_table_index(file_info->path, file_info->elf_header.h64.e_shstrndx));
+		warning_bad_table_index(file_info->path, file_info->elf_header.h64.e_shstrndx);
 	return (0);
 }
 
@@ -81,6 +82,7 @@ static int	handle_file(char* path, t_options* options, bool print_name) {
 		return (ERROR_SYS);
 	if (check_header(&file_info))
 		return (ERROR_SYS);
+	retrieve_shstr_table(&file_info);
 	if (retrieve_syms_table_header(&file_info))
 		return (ERROR_SYS);
 	//Check error in table header

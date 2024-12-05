@@ -195,7 +195,11 @@ static int	_retrieve_symbols_32(t_file_info* file_info, t_options* options) {
 		if (_filter_symbol_32(symbol, options) == false)
 			continue;
 		s_entry.addr.s32 = symbol;
-		s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
+		s_entry.shdr.s32 = nm_get_shdr_32(file_info, symbol->st_shndx);
+		if (symbol->st_name)
+			s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
+		else
+			s_entry.str = nm_get_section_str(file_info, symbol->st_shndx);
 		ft_vector_push(&file_info->symbols, &s_entry);
 	}
 	return (0);
@@ -216,31 +220,15 @@ static int	_retrieve_symbols_64(t_file_info* file_info, t_options* options) {
 		if (_filter_symbol_64(symbol, options) == false)
 			continue;
 		s_entry.addr.s64 = symbol;
-		s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
+		s_entry.shdr.s64 = nm_get_shdr_64(file_info, symbol->st_shndx);
+		if (symbol->st_name)
+			s_entry.str = nm_get_sym_str(file_info, symbol->st_name);
+		else
+			s_entry.str = nm_get_section_str(file_info, symbol->st_shndx);
 		ft_vector_push(&file_info->symbols, &s_entry);
 	}
 	return (0);
 }
-
-// static int	_print_symbols_64(t_file_info* file_info, t_options* options) {
-// 	size_t			sym_offset = file_info->syms_header.h64.sh_offset;
-// 	size_t			max_offset = sym_offset + file_info->syms_header.h64.sh_size;
-// 	const char*		sym_str;
-// 	(void) 			options;
-
-// 	// ft_hexdump(file_info->mapped_content, file_info->str_tbl_header.h64.sh_size, 1, file_info->str_tbl_header.h64.sh_offset);
-// 	// ft_hexdump(file_info->mapped_content + file_info->str_tbl_header.h64.sh_offset, file_info->str_tbl_header.h64.sh_size, 1, 0);
-// 	// ft_hexdump_color_zone(file_info->mapped_content + file_info->syms_header.h64.sh_offset, file_info->syms_header.h64.sh_size / 2, 2, 0, 12);
-// 	for (; sym_offset < max_offset; sym_offset += sizeof(Elf64_Sym)) {
-// 		if (sym_offset >= file_info->size)
-// 			return (error_bad_index(file_info->path, sym_offset));
-// 		sym_str = nm_get_sym_str(file_info, ((Elf64_Sym*)(file_info->mapped_content + sym_offset))->st_name);
-// 		ft_printf("%s\n", sym_str);
-// 	}
-
-// 	return (0);
-// }
-
 
 /// @brief Retrieve symbols from symtab, filtering them.
 /// Sort them and ignore some according to options.
@@ -274,26 +262,6 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 	}
 	return (0);
 }
-
-// static int	print_one_symbol(t_symbol_entry symbol, size_t len_str) {
-// 	char	output[16 + 3 + len_str + 2];
-// 	// char* output = malloc(16 + 3 + len_str + 2);
-
-// 	ft_memcpy(output, "0000000000000000 X ", 19);
-// 	ft_putunbr_buffer((unsigned long)symbol.addr.s64->st_value, &output[0], 16);
-// 	printf("%lu\n", symbol.addr.s64->st_value);
-// 	// ft_memcpy(output, symbol.addr.s64->st_value, sizeof(symbol.addr.s64->st_value));
-// 	ft_memcpy(output + 19, symbol.str, len_str);
-// 	output[16 + 3 + len_str] = '\n';
-// 	output[16 + 3 + len_str + 1] = '\0';
-// 	write(1, output, 16 + 3 + len_str + 1);
-// 	// free(output);
-// 	return (0);
-// }
-
-// static unsigned char	get_symbol_type(t_symbol_entry* symbol) {
-// 	const unsigned char	type[] = "?";
-// }
 
 /// @brief Print symbols from file_info symbols vector
 /// @param file_info 
