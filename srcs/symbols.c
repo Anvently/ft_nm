@@ -1,21 +1,6 @@
 #include <ft_nm.h>
 #include <libft.h>
 
-/** 
-  Elf32_Off		e_shoff;		Section header table file offset 
-  Elf32_Half	e_shentsize;	Section header table entry size 
-  Elf32_Half	e_shnum;		Section header table entry count 
-  Elf32_Half	e_shstrndx;		Section header string table index 
-**/
-
-# include <string.h>
-static int	_comp_symbols_ascii(void* a, void* b) {
-	t_symbol_entry*	sA = (t_symbol_entry*)a;
-	t_symbol_entry*	sB = (t_symbol_entry*)b;
-
-	return (ft_stricmp_ignore(sA->str, sB->str, " _	."));
-}
-
 static int	_comp_symbols_addr32(void* a, void* b) {
 	t_symbol_entry*	sA = (t_symbol_entry*)a;
 	t_symbol_entry*	sB = (t_symbol_entry*)b;
@@ -36,6 +21,36 @@ static int	_comp_symbols_addr64(void* a, void* b) {
 	if (sA->addr.s64->st_value > sB->addr.s64->st_value)
 		return (1);
 	return (0);
+}
+
+static int	_comp_symbols_ascii32(void* a, void* b) {
+	int	diff;
+
+	t_symbol_entry*	sA = (t_symbol_entry*)a;
+	t_symbol_entry*	sB = (t_symbol_entry*)b;
+
+	diff = ft_stricmp_ignore(sA->str, sB->str, " _	.@-");
+	if (diff)
+		return (diff);
+	diff = ft_strcmp(sA->str, sB->str);
+	if (diff)
+		return (diff);
+	return (_comp_symbols_addr32(a, b));
+}
+
+static int	_comp_symbols_ascii64(void* a, void* b) {
+	int	diff;
+
+	t_symbol_entry*	sA = (t_symbol_entry*)a;
+	t_symbol_entry*	sB = (t_symbol_entry*)b;
+
+	diff = ft_stricmp_ignore(sA->str, sB->str, " _	.@-");
+	if (diff)
+		return (diff);
+	diff = ft_strcmp(sA->str, sB->str);
+	if (diff)
+		return (diff);
+	return (_comp_symbols_addr64(a, b));
 }
 
 static int	_retrieve_symbols_hdr_32(t_file_info* file_info) {
@@ -128,7 +143,6 @@ static bool	_filter_symbol_32(Elf32_Sym* symbol, t_options* options) {
 	// Filter empty symbol
 	if (ft_memcmp(symbol, &null_sym, sizeof(null_sym)) == 0)
 		return (false);
-	return (true);
 
 	//Filter section symbol (debug)
 	if (options->display_debug_syms == false && (
@@ -237,8 +251,12 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 	file_info->nbr_symbols = ft_vector_size(file_info->symbols);
 	switch (options->sort_by) {
 		case SORT_BY_ASCII:
-			if (ft_merge_sort((t_symbol_entry*)file_info->symbols, file_info->nbr_symbols, _comp_symbols_ascii, options->reverse_sort))
-				error_alloc("sorting symbol vector by name");
+			if (IS32(file_info) && ft_merge_sort((t_symbol_entry*)file_info->symbols,
+				file_info->nbr_symbols, _comp_symbols_ascii32, options->reverse_sort))
+					error_alloc("sorting symbol vector by name");
+			else if (IS64(file_info) && ft_merge_sort((t_symbol_entry*)file_info->symbols,
+				file_info->nbr_symbols, _comp_symbols_ascii64, options->reverse_sort))
+					error_alloc("sorting symbol vector by address");
 			break;
 		
 		case SORT_BY_ADDR:
@@ -264,9 +282,8 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 /// - ```-```
 /// - ```c/C```
 /// - ```g```
-/// - ```i/I```
+/// - ```I```
 /// - ```p```
-/// - difference between ```n``` and ```N```
 /// - ```s/S```
 static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
 	unsigned char	ret = '?';
@@ -287,6 +304,8 @@ static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
 		ret = 'r';
 	else if (symbol->shdr.s64->sh_type == SHT_PROGBITS && symbol->shdr.s64->sh_flags & SHF_EXECINSTR)
 		ret = 't';
+	else if ((symbol->shdr.s64->sh_flags & (SHF_ALLOC | SHF_EXECINSTR | SHF_WRITE)) == 0)
+		ret = 'n';
 	if (ft_islower(ret) && ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_GLOBAL)
 		ret -= ('a' - 'A');
 	else if (ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_WEAK) {
@@ -296,6 +315,43 @@ static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
 		if (symbol->addr.s64->st_shndx)
 			ret -= ('a' - 'A');
 	}
+	if (ELF64_ST_TYPE(symbol->addr.s64->st_info) == STT_GNU_IFUNC)
+		ret = 'i';
+	return (ret);
+}
+
+static unsigned char	_get_sym_type_32(t_symbol_entry* symbol) {
+	unsigned char	ret = '?';
+
+	if (symbol->addr.s32->st_shndx == SHN_UNDEF)
+		ret = 'U';
+	else if (symbol->addr.s32->st_shndx == SHN_ABS)
+		ret = 'a';
+	else if (symbol->shdr.s32->sh_type == SHT_NOBITS) //bss section, unitialized data
+		ret = 'b';
+	else if (ELF32_ST_TYPE(symbol->addr.s32->st_info) == STT_COMMON)
+		ret = 'c';
+	else if ((symbol->shdr.s32->sh_flags & SHF_ALLOC && symbol->shdr.s32->sh_flags & SHF_WRITE))
+		ret = 'd';
+	else if (symbol->addr.s32->st_name == SHN_UNDEF && ft_strncmp(".debug", symbol->str, 6) == 0)
+		ret = 'N';
+	else if (symbol->shdr.s32->sh_flags & SHF_ALLOC && !(symbol->shdr.s32->sh_flags & (SHF_WRITE | SHF_EXECINSTR)))
+		ret = 'r';
+	else if (symbol->shdr.s32->sh_type == SHT_PROGBITS && symbol->shdr.s32->sh_flags & SHF_EXECINSTR)
+		ret = 't';
+	else if ((symbol->shdr.s32->sh_flags & (SHF_ALLOC | SHF_EXECINSTR | SHF_WRITE)) == 0)
+		ret = 'n';
+	if (ft_islower(ret) && ELF32_ST_BIND(symbol->addr.s32->st_info) == STB_GLOBAL)
+		ret -= ('a' - 'A');
+	else if (ELF32_ST_BIND(symbol->addr.s32->st_info) == STB_WEAK) {
+		ret = 'w';
+		if (ELF32_ST_TYPE(symbol->addr.s32->st_info) == STT_OBJECT)
+			ret = 'v';
+		if (symbol->addr.s32->st_shndx)
+			ret -= ('a' - 'A');
+	}
+	if (ELF32_ST_TYPE(symbol->addr.s32->st_info) == STT_GNU_IFUNC)
+		ret = 'i';
 	return (ret);
 }
 
@@ -313,8 +369,12 @@ int	ft_nm_print_symbols(t_file_info* file_info) {
 			else
 				ft_printf("%016x %c %s\n", symbol->addr.s64->st_value, _get_sym_type_64(symbol), symbol->str);
 		}
-		else
-			ft_printf("%016x X %s\n", symbol->addr.s32->st_value, symbol->str);
+		else {
+			if (symbol->addr.s32->st_shndx == SHN_UNDEF)
+				ft_printf("%8s %c %s\n", "", _get_sym_type_32(symbol), symbol->str);
+			else
+				ft_printf("%08x %c %s\n", symbol->addr.s32->st_value, _get_sym_type_32(symbol), symbol->str);
+		}
 	}
 	return (0);
 }

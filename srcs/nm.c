@@ -88,7 +88,7 @@ static int	handle_file(char* path, t_options* options, bool print_name) {
 	if (print_name)
 		ft_printf("\n%s:\n", path);
 	if (!file_info.syms_header.h32 && !file_info.syms_header.h64)
-		ft_printf("ft_nm: %s: no symbols\n", file_info.path);
+		ft_dprintf(2, "ft_nm: %s: no symbols\n", file_info.path);
 	else if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
 		ret = ft_nm_print_symbols(&file_info);
 	ft_vector_free(&file_info.symbols);
