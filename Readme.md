@@ -1,5 +1,7 @@
 # FT_NM
 
+A replica of **nm** command, featuring a more robust handling of corrupted file structure.
+
 # Options
 
 ## -a / --debug-syms
@@ -19,10 +21,23 @@
 
 # Notes
 
-## Corrupting entry size in symtab header
-	Contrary to readelf, nm seems to use and rely on sh_entrysize to loop through symtab. When this value is corrupted, nm flag file format as invalid. However using the known size of Elf_Sym structures is enough to deal with such corrupted files. Another approach could be to check if the division of symtab section's size by the struct size is a whole number.
-	
-## TODO
+## Tests
 
-### Tests
+This repo features in the tests subfolder a panel of corrupted elf files. It includes various corruption on ELF header part but also various corruption around symtab, strtab and shstrtab.
+
+## Corrupted ELF files and objects
+
+In opposition with GNU standard **nm**, this program is able, to a certain extent, to handle and work around various corruptions of relocable or executable files :
+* missing strtab : symbols will be printed without their names, unless their names is contain within the section headers table (which is the case for debugging symbol, -a flag)
+* missing shstrtab : symbols that have not their name in strtab (-a flag) will still be printed with a missing name
+* corrupted index: it can be a corruption of the index of strtab or shstrtab itself, or a simple corruption of symbol's index in a string table. In such case, they will be printed with a <corrupted> indicator
+
+As long as the symbols themselves are not corrupted, they will be printed, regardless if a name can be linked to them. The intended behaviour was based on how **readelf** command handles these situations. 
+	
+# TODO
+
+* Return 1 when fatal error occurs (ex: too badly corrupted file or non-elf file)
+* Implement types : '-', c/C, g, I, p, s/S
+
+## Tests
 * Define more than one symtab in a elf file
