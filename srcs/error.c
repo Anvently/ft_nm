@@ -30,7 +30,7 @@ int	warning_bad_table_index(const char* path, size_t index) {
 
 int	warning_non_string_section(const char* path, size_t index) {
 	ft_dprintf(2, "warning: %s: '%s': %s (%#x)\n", executable_name, path,
-		"symtab should link a string section", (unsigned int)index);
+		"index should link a string section", (unsigned int)index);
 	return (ERROR_SYS);
 }
 

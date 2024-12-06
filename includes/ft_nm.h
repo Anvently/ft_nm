@@ -64,8 +64,8 @@ typedef union {
 
 typedef struct {
 	t_elf_header			elf_header;
-	t_section_header		syms_header;
-	t_section_header		str_tbl_header;
+	t_section_header_ptr	syms_header;
+	t_section_header_ptr	str_tbl_header;
 	t_section_header_ptr	shstr_tbl_header;
 	size_t					size;
 	const char*				mapped_content;

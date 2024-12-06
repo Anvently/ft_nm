@@ -23,10 +23,10 @@ uint32_t	nm_get_shdr_type(t_file_info* file_info, size_t index) {
 Elf32_Shdr*	nm_get_shdr_32(t_file_info* file_info, size_t index) {
 	size_t	offset;
 
-	if (index == SHN_ABS)
+	if (index == SHN_UNDEF || index == SHN_ABS)
 		return (NULL);
-	if (file_info->syms_header.h32.sh_link >= file_info->elf_header.h32.e_shnum) {
-		warning_bad_table_index(file_info->path, file_info->syms_header.h32.sh_link);
+	if (index >= file_info->elf_header.h32.e_shnum) {
+		warning_bad_table_index(file_info->path, index);
 		return (NULL);
 	}
 	offset =  file_info->elf_header.h32.e_shoff + (index * file_info->elf_header.h32.e_shentsize);
@@ -55,18 +55,19 @@ int	retrieve_shstr_table(t_file_info* file_info) {
 	return (0);
 }
 
-/// @brief Return section header address of given address. ```SHN_ABS``` results in ```NULL```
-/// without generating an error. Bad index error can be generated and printed.
+/// @brief Return section header address of given address. ```SHN_ABS``` 
+/// or ```SHN_UNDEF``` results in ```NULL``` without generating an error.
+/// Bad index error can be generated and printed.
 /// @param file_info 
 /// @param index 
 /// @return 
 Elf64_Shdr*	nm_get_shdr_64(t_file_info* file_info, size_t index) {
 	size_t	offset;
 
-	if (index == SHN_ABS)
+	if (index == SHN_UNDEF || index == SHN_ABS)
 		return (NULL);
-	if (file_info->syms_header.h64.sh_link >= file_info->elf_header.h64.e_shnum) {
-		warning_bad_table_index(file_info->path, file_info->syms_header.h64.sh_link);
+	if (index >= file_info->elf_header.h64.e_shnum) {
+		warning_bad_table_index(file_info->path, index);
 		return (NULL);
 	}
 	offset =  file_info->elf_header.h64.e_shoff + (index * file_info->elf_header.h64.e_shentsize);
@@ -109,7 +110,7 @@ static inline const char*	get_string_from_array(t_file_info* file_info, const ch
 /// actually a string table section
 /// @param file_info 
 /// @param idx 
-/// @return ```NULL``` if idx is 0, ```<corrupt>```
+/// @return ```NULL``` if idx is 0, empty string if strtab is missing or ```<corrupt>```
 /// if section is not a string section or if idx is outside section
 /// @todo May want to implement a safe strlen check to make sure the string is NULL terminated
 const char*	nm_get_sym_str(t_file_info* file_info, size_t idx) {
@@ -117,20 +118,24 @@ const char*	nm_get_sym_str(t_file_info* file_info, size_t idx) {
 
 	if (idx == 0)
 		return (NULL);
+	if (!file_info->str_tbl_header.h32 && !file_info->str_tbl_header.h64)
+		return "";
 	if (IS32(file_info)) {
-		if (IS_VALID_STRTAB(&file_info->str_tbl_header.h32) == false)
+		if (IS_VALID_STRTAB(file_info->str_tbl_header.h32) == false)
 			return corrupt_str;
-		else if (idx >= file_info->str_tbl_header.h32.sh_size)
+		else if (idx >= file_info->str_tbl_header.h32->sh_size ||
+		file_info->str_tbl_header.h32->sh_offset + idx > file_info->size)
 			return corrupt_str;
 		else
-			return (file_info->mapped_content + file_info->str_tbl_header.h32.sh_offset + idx);
+			return (file_info->mapped_content + file_info->str_tbl_header.h32->sh_offset + idx);
 	}
-	if (IS_VALID_STRTAB(&file_info->str_tbl_header.h64) == false)
+	if (IS_VALID_STRTAB(file_info->str_tbl_header.h64) == false)
 		return corrupt_str;
-	else if (idx >= file_info->str_tbl_header.h64.sh_size)
+	else if (idx >= file_info->str_tbl_header.h64->sh_size ||
+		file_info->str_tbl_header.h64->sh_offset + idx > file_info->size)
 			return corrupt_str;
 	else
-		return (file_info->mapped_content + file_info->str_tbl_header.h64.sh_offset + idx);
+		return (file_info->mapped_content + file_info->str_tbl_header.h64->sh_offset + idx);
 }
 
 static const char* _nm_get_section_str_32(t_file_info* file_info, size_t idx) {
@@ -142,7 +147,8 @@ static const char* _nm_get_section_str_32(t_file_info* file_info, size_t idx) {
 	shdr = nm_get_shdr_32(file_info, idx);
 	if (shdr == NULL)
 		return (corrupt_str);
-	else if (shdr->sh_name >= file_info->shstr_tbl_header.h32->sh_size)
+	else if (shdr->sh_name >= file_info->shstr_tbl_header.h32->sh_size ||
+		file_info->shstr_tbl_header.h32->sh_offset + shdr->sh_name > file_info->size)
 		return corrupt_str;
 	else
 		return (file_info->mapped_content + file_info->shstr_tbl_header.h32->sh_offset + shdr->sh_name);
@@ -157,7 +163,8 @@ static const char* _nm_get_section_str_64(t_file_info* file_info, size_t idx) {
 	shdr = nm_get_shdr_64(file_info, idx);
 	if (shdr == NULL)
 		return (corrupt_str);
-	else if (shdr->sh_name >= file_info->shstr_tbl_header.h64->sh_size)
+	else if (shdr->sh_name >= file_info->shstr_tbl_header.h64->sh_size ||
+		file_info->shstr_tbl_header.h64->sh_offset + shdr->sh_name > file_info->size)
 		return corrupt_str;
 	else
 		return (file_info->mapped_content + file_info->shstr_tbl_header.h64->sh_offset + shdr->sh_name);
@@ -173,7 +180,7 @@ static const char* _nm_get_section_str_64(t_file_info* file_info, size_t idx) {
 /// or if its index value is outside section
 /// @todo May want to implement a safe strlen check to make sure the string is NULL terminated
 const char*	nm_get_section_str(t_file_info* file_info, size_t idx) {
-	if (idx == SHN_ABS)
+	if (idx == SHN_UNDEF || idx == SHN_ABS)
 		return ("");
 	if (IS32(file_info))
 		return (_nm_get_section_str_32(file_info, idx));

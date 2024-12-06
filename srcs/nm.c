@@ -85,17 +85,15 @@ static int	handle_file(char* path, t_options* options, bool print_name) {
 	retrieve_shstr_table(&file_info);
 	if (retrieve_syms_table_header(&file_info))
 		return (ERROR_SYS);
-	//Check error in table header
 	if (print_name)
 		ft_printf("\n%s:\n", path);
-	if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
+	if (!file_info.syms_header.h32 && !file_info.syms_header.h64)
+		ft_printf("ft_nm: %s: no symbols\n", file_info.path);
+	else if ((ret = ft_nm_retrieve_symbols(&file_info, options)) == 0)
 		ret = ft_nm_print_symbols(&file_info);
 	ft_vector_free(&file_info.symbols);
 	if (munmap((char*)file_info.mapped_content, file_info.size))
 		return (ERROR_FATAL);
-	// print_section_header(&file_info.str_tbl_header, GET_CLASS(&file_info));
-	// print_section_header(&file_info.syms_header, GET_CLASS(&file_info));
-	
 	return (ret);
 }
 

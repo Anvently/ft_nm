@@ -49,7 +49,7 @@ static int	_retrieve_symbols_hdr_32(t_file_info* file_info) {
 			return(error_bad_index(file_info->path, index));
 		section_type = ((Elf32_Shdr*)(file_info->mapped_content + index))->sh_type;
 		if (section_type == SHT_SYMTAB) { //
-			ft_memcpy(&file_info->syms_header, file_info->mapped_content + index, entry_size);
+			file_info->syms_header.h32 = (Elf32_Shdr*)(file_info->mapped_content + index);
 			return (0);
 		}
 	}
@@ -67,41 +67,33 @@ static int	_retrieve_symbols_hdr_64(t_file_info* file_info) {
 			return(error_bad_index(file_info->path, index));
 		section_type = ((Elf64_Shdr*)(file_info->mapped_content + index))->sh_type;
 		if (section_type == SHT_SYMTAB) { //
-			ft_memcpy(&file_info->syms_header, file_info->mapped_content + index, entry_size);
+			file_info->syms_header.h64 = (Elf64_Shdr*)(file_info->mapped_content + index);
 			return (0);
 		}
 	}
 	return (0);
 }
 
-/// @brief Check validity of symtable header. Warning can be raised without
-/// returning errors. If symtab link a valid string table section, ```str_tbl_header```
-/// is filled in ```file_info```.
+/// @brief Retrieve symbol strtab from sh_link in symtab header.
+/// Warning can be raised without returning errors.
+/// Undefined or bad index value will result in undefined in ```NULL```,
+/// if non-valid strtab, section will still be assigned to file_info 
 /// @param file_info 
-/// @return 
+/// @return Always ```0```
 static int	retrieve_str_table_header(t_file_info* file_info) {
-	Elf32_Shdr*	section32;
-	Elf64_Shdr*	section64;
-
 	// Check sh_link value for overflow or non string sections
 	if (IS32(file_info)) {
-		if (file_info->syms_header.h32.sh_link >= file_info->elf_header.h32.e_shnum)
-			return (warning_bad_table_index(file_info->path, file_info->syms_header.h32.sh_link));
-		section32 = nm_get_shdr_32(file_info, file_info->syms_header.h32.sh_link);
-		if (!section32)
-			return (ERROR_SYS);
-		if (section32->sh_type != SHT_STRTAB)
-			warning_non_string_section(file_info->path, file_info->syms_header.h32.sh_link);
-		ft_memcpy(&file_info->str_tbl_header, section32, file_info->elf_header.h32.e_shentsize);
+		file_info->str_tbl_header.h32 = nm_get_shdr_32(file_info, file_info->syms_header.h32->sh_link);
+		if (!file_info->str_tbl_header.h32)
+			return (0);
+		if (file_info->str_tbl_header.h32->sh_type != SHT_STRTAB)
+			warning_non_string_section(file_info->path, file_info->syms_header.h32->sh_link);
 	} else if (IS64(file_info)) {
-		if (file_info->syms_header.h64.sh_link >= file_info->elf_header.h64.e_shnum)
-			return (warning_bad_table_index(file_info->path, file_info->syms_header.h64.sh_link));
-		section64 = nm_get_shdr_64(file_info, file_info->syms_header.h64.sh_link);
-		if (!section64)
-			return (ERROR_SYS);
-		if (section64->sh_type != SHT_STRTAB)
-			warning_non_string_section(file_info->path, file_info->syms_header.h64.sh_link);
-		ft_memcpy(&file_info->str_tbl_header, section64, file_info->elf_header.h64.e_shentsize);
+		file_info->str_tbl_header.h64 = nm_get_shdr_64(file_info, file_info->syms_header.h64->sh_link);
+		if (!file_info->str_tbl_header.h64)
+			return (0);
+		if (file_info->str_tbl_header.h64->sh_type != SHT_STRTAB)
+			warning_non_string_section(file_info->path, file_info->syms_header.h64->sh_link);
 	}
 	return (0);
 }
@@ -116,12 +108,13 @@ int	retrieve_syms_table_header(t_file_info* file_info) {
 		return (ERROR_SYS);
 	else if (IS64(file_info) && _retrieve_symbols_hdr_64(file_info))
 		return (ERROR_SYS);
-	if (IS32(file_info) && file_info->syms_header.h32.sh_size % file_info->syms_header.h32.sh_entsize != 0)
-		warning_corrupt_entry_size(file_info->path, file_info->syms_header.h32.sh_entsize, file_info->syms_header.h32.sh_size);
-	else if (IS64(file_info) && file_info->syms_header.h64.sh_size % file_info->syms_header.h64.sh_entsize != 0)
-		warning_corrupt_entry_size(file_info->path, file_info->syms_header.h64.sh_entsize, file_info->syms_header.h64.sh_size);
-	if (retrieve_str_table_header(file_info))
-		return (ERROR_SYS);
+	if (!file_info->syms_header.h32 && !file_info->syms_header.h64)
+		return (0);
+	if (IS32(file_info) && file_info->syms_header.h32->sh_size % file_info->syms_header.h32->sh_entsize != 0)
+		warning_corrupt_entry_size(file_info->path, file_info->syms_header.h32->sh_entsize, file_info->syms_header.h32->sh_size);
+	else if (IS64(file_info) && file_info->syms_header.h64->sh_size % file_info->syms_header.h64->sh_entsize != 0)
+		warning_corrupt_entry_size(file_info->path, file_info->syms_header.h64->sh_entsize, file_info->syms_header.h64->sh_size);
+	retrieve_str_table_header(file_info);
 	return (0);
 }
 
@@ -181,11 +174,11 @@ static bool	_filter_symbol_64(Elf64_Sym* symbol, t_options* options) {
 }
 
 static int	_retrieve_symbols_32(t_file_info* file_info, t_options* options) {
-	Elf32_Sym*		symbol = (void*)file_info->mapped_content + file_info->syms_header.h32.sh_offset;
+	Elf32_Sym*		symbol = (void*)file_info->mapped_content + file_info->syms_header.h32->sh_offset;
 	t_symbol_entry	s_entry;
 	(void) 			options;
 
-	file_info->nbr_symbols = file_info->syms_header.h32.sh_size / sizeof(Elf32_Sym);
+	file_info->nbr_symbols = file_info->syms_header.h32->sh_size / sizeof(Elf32_Sym);
 	file_info->symbols = ft_vector_create(sizeof(t_symbol_entry), file_info->nbr_symbols);
 	if (!file_info->symbols)
 		error_alloc("allocating symbols vector");
@@ -206,11 +199,11 @@ static int	_retrieve_symbols_32(t_file_info* file_info, t_options* options) {
 }
 
 static int	_retrieve_symbols_64(t_file_info* file_info, t_options* options) {
-	Elf64_Sym*		symbol = (void*)file_info->mapped_content + file_info->syms_header.h64.sh_offset;
+	Elf64_Sym*		symbol = (void*)file_info->mapped_content + file_info->syms_header.h64->sh_offset;
 	t_symbol_entry	s_entry;
 	(void) 			options;
 
-	file_info->nbr_symbols = file_info->syms_header.h64.sh_size / sizeof(Elf64_Sym);
+	file_info->nbr_symbols = file_info->syms_header.h64->sh_size / sizeof(Elf64_Sym);
 	file_info->symbols = ft_vector_create(sizeof(t_symbol_entry), file_info->nbr_symbols);
 	if (!file_info->symbols)
 		error_alloc("allocating symbols vector");
@@ -278,7 +271,9 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
 	unsigned char	ret = '?';
 
-	if (symbol->addr.s64->st_shndx == SHN_ABS)
+	if (symbol->addr.s64->st_shndx == SHN_UNDEF)
+		ret = 'U';
+	else if (symbol->addr.s64->st_shndx == SHN_ABS)
 		ret = 'a';
 	else if (symbol->shdr.s64->sh_type == SHT_NOBITS) //bss section, unitialized data
 		ret = 'b';
@@ -292,8 +287,6 @@ static unsigned char	_get_sym_type_64(t_symbol_entry* symbol) {
 		ret = 'r';
 	else if (symbol->shdr.s64->sh_type == SHT_PROGBITS && symbol->shdr.s64->sh_flags & SHF_EXECINSTR)
 		ret = 't';
-	else if (symbol->addr.s64->st_shndx == SHN_UNDEF)
-		ret = 'U';
 	if (ft_islower(ret) && ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_GLOBAL)
 		ret -= ('a' - 'A');
 	else if (ELF64_ST_BIND(symbol->addr.s64->st_info) == STB_WEAK) {
