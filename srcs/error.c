@@ -14,7 +14,12 @@ int	error_file_format(const char* path, const char* detail) {
 		"file format not recognized", detail ? detail : "");
 	return (ERROR_SYS);
 }
-// static void	
+
+int	error_file_directory(const char* path) {
+	ft_dprintf(2, "%s: Warning: '%s' %s\n", executable_name, path,
+		"is a directory");
+	return (ERROR_SYS);
+}
 
 int	error_bad_index(const char* path, size_t index) {
 	ft_dprintf(2, "warning: %s: '%s': %s (%#x)\n", executable_name, path,

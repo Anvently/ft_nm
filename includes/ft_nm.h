@@ -110,6 +110,7 @@ const char*	nm_get_section_str(t_file_info* file_info, size_t idx);
 int		error_open_file(const char* path, int errnum);
 int		error_file_format(const char* path, const char* detail);
 int		error_bad_index(const char* path, size_t index);
+int		error_file_directory(const char* path);
 int		warning_bad_table_index(const char* path, size_t index);
 int		warning_non_string_section(const char* path, size_t index);
 int		warning_corrupt_entry_size(const char* path, size_t entry_size, size_t section_size);

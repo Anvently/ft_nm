@@ -21,7 +21,10 @@ static int map_file(const char* path, const char** mapped_dest, size_t* size) {
 		close (fd);
 		return (error_open_file(path, errno), ERROR_SYS);
 	}
-	// Check file type
+	if (S_ISREG(file_stats.st_mode) == false) {
+		close(fd);
+		return (error_file_directory(path), ERROR_SYS);
+	}
 	*size = file_stats.st_size;
 	*mapped_dest = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (*mapped_dest == MAP_FAILED) {
