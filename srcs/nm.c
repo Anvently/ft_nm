@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-extern int	retrieve_syms_table_header(t_file_info* file_info);
+extern int	retrieve_syms_table_header(t_file_info* file_info, t_options* options);
 extern int	retrieve_str_table_header(t_file_info* file_info);
 extern int	retrieve_shstr_table(t_file_info* file_info);
 
@@ -86,7 +86,7 @@ static int	handle_file(char* path, t_options* options, bool print_name) {
 	if (check_header(&file_info))
 		return (ERROR_SYS);
 	retrieve_shstr_table(&file_info);
-	if (retrieve_syms_table_header(&file_info))
+	if (retrieve_syms_table_header(&file_info, options))
 		return (ERROR_SYS);
 	if (print_name)
 		ft_printf("\n%s:\n", path);

@@ -12,10 +12,11 @@ enum	OPTIONS {
 			OPT_UNDEFINED_ONLY, // -u
 			OPT_REV_SORT, // -r
 			OPT_DISABLE_SORT, // -p
+			OPT_DYN_SYMS, /// -D
 			OPT_NBR_OPTIONS
 };
 
-# define __FT_NBR_OPTIONS 5
+# define __FT_NBR_OPTIONS OPT_NBR_OPTIONS
 // int	NBR_OPTIONS = 5;
 # include <ft_options.h>
 
@@ -41,6 +42,7 @@ typedef struct s_options {
 	bool			display_debug_syms; // -a option
 	bool			filter_local; // -g options, external only
 	bool			filter_defined; // -u options, undefined only
+	bool			dyn_syms; // -D options, use dyntab instead of symtab
 }	t_options;
 
 /* Main functions */

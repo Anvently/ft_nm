@@ -5,6 +5,7 @@ static int	option_set_extern_only(t_options* options, char*);
 static int	option_set_undefined_only(t_options* options, char*);
 static int	option_set_reverse_sort(t_options* options, char*);
 static int	option_disable_sort(t_options* options, char*);
+static int	option_set_dyn_syms(t_options* options, char*);
 
 t_opt_flag options_list[__FT_NBR_OPTIONS] = {
 	[OPT_DEBUG_SYMS]		= (t_opt_flag) {
@@ -31,6 +32,11 @@ t_opt_flag options_list[__FT_NBR_OPTIONS] = {
 		.short_id = 'p',
 		.long_id = "no-sort",
 		.handler = &option_disable_sort
+	},
+	[OPT_DYN_SYMS]			= (t_opt_flag) {
+		.short_id = 'D',
+		.long_id = "dynamic",
+		.handler = &option_set_dyn_syms
 	}
 };
 
@@ -72,3 +78,11 @@ static int	option_disable_sort(t_options* options, char* arg) {
 	options->sort_by = SORT_BY_DISABLE;
 	return (0);
 }
+
+static int	option_set_dyn_syms(t_options* options, char* arg) {
+	(void) arg;
+
+	options->dyn_syms = true;
+	return (0);
+}
+

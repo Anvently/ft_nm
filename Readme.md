@@ -19,6 +19,9 @@ A replica of **nm** command, featuring a more robust handling of corrupted file 
 ### -p / --no-sort
 	Do no attempt to sort entries, display them as they come
 
+### -D / --dynamic
+	Display dynamic symbols instead of normal symbols
+
 ## Notes
 
 ### Tests

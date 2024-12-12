@@ -53,7 +53,7 @@ static int	_comp_symbols_ascii64(void* a, void* b) {
 	return (_comp_symbols_addr64(a, b));
 }
 
-static int	_retrieve_symbols_hdr_32(t_file_info* file_info) {
+static int	_retrieve_symbols_hdr_32(t_file_info* file_info, t_options* options) {
 	Elf32_Off		index = file_info->elf_header.h32.e_shoff; //Section table offset
 	Elf32_Half		entry_size = file_info->elf_header.h32.e_shentsize;
 	Elf32_Half		entry_count = file_info->elf_header.h32.e_shnum;
@@ -63,7 +63,7 @@ static int	_retrieve_symbols_hdr_32(t_file_info* file_info) {
 		if (index >= file_info->size || (index + entry_size > file_info->size))
 			return(error_bad_index(file_info->path, index));
 		section_type = ((Elf32_Shdr*)(file_info->mapped_content + index))->sh_type;
-		if (section_type == SHT_SYMTAB) { //
+		if (section_type == (options->dyn_syms ? SHT_DYNSYM : SHT_SYMTAB)) { //
 			file_info->syms_header.h32 = (Elf32_Shdr*)(file_info->mapped_content + index);
 			return (0);
 		}
@@ -71,7 +71,7 @@ static int	_retrieve_symbols_hdr_32(t_file_info* file_info) {
 	return (0);
 }
 
-static int	_retrieve_symbols_hdr_64(t_file_info* file_info) {
+static int	_retrieve_symbols_hdr_64(t_file_info* file_info, t_options* options) {
 	Elf64_Off	index = file_info->elf_header.h64.e_shoff; //Section table offset
 	Elf64_Half	entry_size = file_info->elf_header.h64.e_shentsize;
 	Elf64_Half	entry_count = file_info->elf_header.h64.e_shnum;
@@ -81,7 +81,7 @@ static int	_retrieve_symbols_hdr_64(t_file_info* file_info) {
 		if (index >= file_info->size || (index + entry_size > file_info->size))
 			return(error_bad_index(file_info->path, index));
 		section_type = ((Elf64_Shdr*)(file_info->mapped_content + index))->sh_type;
-		if (section_type == SHT_SYMTAB) { //
+		if (section_type == (options->dyn_syms ? SHT_DYNSYM : SHT_SYMTAB)) { //
 			file_info->syms_header.h64 = (Elf64_Shdr*)(file_info->mapped_content + index);
 			return (0);
 		}
@@ -118,10 +118,10 @@ static int	retrieve_str_table_header(t_file_info* file_info) {
 /// @param file_info 
 /// @param options 
 /// @return ```1```if not found
-int	retrieve_syms_table_header(t_file_info* file_info) {
-	if (IS32(file_info) && _retrieve_symbols_hdr_32(file_info))
+int	retrieve_syms_table_header(t_file_info* file_info, t_options* options) {
+	if (IS32(file_info) && _retrieve_symbols_hdr_32(file_info, options))
 		return (ERROR_SYS);
-	else if (IS64(file_info) && _retrieve_symbols_hdr_64(file_info))
+	else if (IS64(file_info) && _retrieve_symbols_hdr_64(file_info, options))
 		return (ERROR_SYS);
 	if (!file_info->syms_header.h32 && !file_info->syms_header.h64)
 		return (0);
@@ -278,9 +278,8 @@ int	ft_nm_retrieve_symbols(t_file_info* file_info, t_options* options) {
 /// @brief 
 /// @param symbol 
 /// @return
-/// @todo Need to understantd :
-/// - ```-```
-/// - ```c/C```
+/// @note Not implemented :
+/// - ```-``` : symbol table string, deprecated symbol format for storing debug symbos
 /// - ```g```
 /// - ```I```
 /// - ```p```
